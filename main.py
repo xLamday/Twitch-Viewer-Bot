@@ -251,6 +251,7 @@ def main():
         text_box.send_keys(f'www.twitch.tv/{twitch_username}')
         text_box.send_keys(Keys.RETURN)
 
+        time.sleep(0.5)
 # Waiting to be on the livestream page        
         wait = WebDriverWait(driver, 240)
         wait.until(EC.presence_of_element_located((By.XPATH, "//h2[@data-a-target='stream-title']")))
