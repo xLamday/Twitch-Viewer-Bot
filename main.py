@@ -58,6 +58,7 @@ def check_for_updates():
                 print("Aggiornamento annullato.")
                 return False
         else:
+            print("Il programma è già aggiornato.")
             return True
     except Exception as e:
         print(f"Errore durante il controllo degli aggiornamenti: {e}")
@@ -66,18 +67,58 @@ def check_for_updates():
 def save_settings(twitch_username):
     with open('settings.txt', 'w') as file:
         file.write(f"Twitch Username: {twitch_username}\n")
-        #file.write(f"Set 160p: {set_160p}\n")    
+        file.write(f"Set 160p: {set_160p}\n")    
 
 def load_settings():
     try:
         with open('settings.txt', 'r') as file:
             lines = file.readlines()
-            if len(lines) >= 1:
+            if len(lines) >= 2:
                 twitch_username = lines[0].split(': ')[1].strip()
-                return twitch_username
+                set_160p = lines[1].split(': ')[1].strip()
+                return twitch_username, set_160p
     except:
         pass
     return None, None
+
+def set_stream_quality(driver):
+    wait = WebDriverWait(driver, 15)
+
+    element_video = None
+    while not element_video:
+        try:
+            # Ad
+            element_video_ad_xpath = "//div[@data-test-selector='sad-overlay']"
+            element_video = driver.find_element(By.XPATH, element_video_ad_xpath)
+        except:
+            # No ad
+            element_video_xpath = "//div[@data-a-target='player-overlay-click-handler']"
+            element_video = driver.find_element(By.XPATH, element_video_xpath)
+        time.sleep(0.5)
+
+    actions = ActionChains(driver)
+
+    actions.move_to_element(element_video).perform()
+
+    settings_button = driver.find_element(By.XPATH, "//button[@aria-label='Settings']")
+    settings_button.click()
+
+    quality_option = wait.until(EC.element_to_be_clickable((By.XPATH, "//div[text()='Quality']")))
+    quality_option.click()
+
+    quality_levels_parent = wait.until(EC.presence_of_element_located((By.XPATH, "//div[@data-a-target='player-settings-menu']")))
+    quality_levels = quality_levels_parent.find_elements(By.XPATH, './*')
+
+    last_btn = quality_levels[len(quality_levels)-1]
+    last_btn.click()  # Last btn because sometimes 160p not available
+
+def print_announcement():
+    try:
+        r = requests.get("https://raw.githubusercontent.com/Kichi779/Twitch-Viewer-Bot/main/announcement.txt", headers={"Cache-Control": "no-cache"})
+        announcement = r.content.decode('utf-8').strip()
+        return announcement
+    except:
+        print("Could not retrieve announcement from GitHub.\n")
 
 def reopen_pages(driver, proxy_url, twitch_username, proxy_count):
     """Funzione per chiudere e riaprire periodicamente le pagine proxy."""
@@ -127,6 +168,13 @@ def main():
                              Discord discord.gg/yzreKA4xZD   
                              Github  github.com/xLamday    """)))
 
+    # announcement = print_announcement()
+    # print("")
+    # print(Colors.red, Center.XCenter("ANNOUNCEMENT"))
+    # print(Colors.yellow, Center.XCenter(f"{announcement}"))
+    # print("")
+    # print("")
+
     proxy_servers = {
         1: "https://www.blockaway.net",
         2: "https://www.croxyproxy.com",
@@ -147,11 +195,13 @@ def main():
 
     if twitch_username is None:
         twitch_username = input(Colorate.Vertical(Colors.green_to_blue, "Inserisci il nome del canale (e.g xlamday): "))
+        set_160p = input(Colorate.Vertical(Colors.purple_to_red, "Do you want to set the stream quality to 160p? (yes/no): "))
         save_settings(twitch_username)
     else:
         use_settings = input(Colorate.Vertical(Colors.green_to_blue, "Vuoi utilizzare le tue impostazioni salvate? (si/no): "))
         if use_settings.lower() == "no":
             twitch_username = input(Colorate.Vertical(Colors.green_to_blue, "Inserisci il nome del canale (e.g xlamday): "))
+            set_160p = input(Colorate.Vertical(Colors.purple_to_red, "Do you want to set the stream quality to 160p? (yes/no): "))
             save_settings(twitch_username)
 
     proxy_count = int(input(Colorate.Vertical(Colors.cyan_to_blue, "Quanti spettatori vuoi inviare? ")))
@@ -201,8 +251,21 @@ def main():
         text_box.send_keys(f'www.twitch.tv/{twitch_username}')
         text_box.send_keys(Keys.RETURN)
 
+# Waiting to be on the livestream page        
+        wait = WebDriverWait(driver, 240)
+        wait.until(EC.presence_of_element_located((By.XPATH, "//h2[@data-a-target='stream-title']")))
+
+        if set_160p == "yes":
+            try:
+                set_stream_quality(driver)
+                print(f"[{i}] Sucessfully setting the lowest quality")
+            except Exception as err:
+                # raise err
+                print(f"[{i}] Unable to set the lowest quality")
+    
     # Riapri periodicamente le pagine
     reopen_pages(driver, proxy_url, twitch_username, proxy_count)
+
 
 if __name__ == '__main__':
     main()
