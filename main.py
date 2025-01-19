@@ -72,21 +72,12 @@ def load_settings():
     try:
         with open('settings.txt', 'r') as file:
             lines = file.readlines()
-            if len(lines) >= 2:
+            if len(lines) >= 1:
                 twitch_username = lines[0].split(': ')[1].strip()
-                set_160p = lines[1].split(': ')[1].strip()
-                return twitch_username, set_160p
+                return twitch_username
     except:
         pass
     return None, None
-
-def print_announcement():
-    try:
-        r = requests.get("https://raw.githubusercontent.com/Kichi779/Twitch-Viewer-Bot/main/announcement.txt", headers={"Cache-Control": "no-cache"})
-        announcement = r.content.decode('utf-8').strip()
-        return announcement
-    except:
-        print("Could not retrieve announcement from GitHub.\n")
 
 def reopen_pages(driver, proxy_url, twitch_username, proxy_count):
     """Funzione per chiudere e riaprire periodicamente le pagine proxy."""
