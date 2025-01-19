@@ -86,28 +86,30 @@ def set_stream_quality(driver):
 
     element_video = None
     while not element_video:
-        try:
-            # Ad
-            element_video_ad_xpath = "//div[@data-test-selector='sad-overlay']"
-            element_video = driver.find_element(By.XPATH, element_video_ad_xpath)
-        except:
-            # No ad
-            element_video_xpath = "//div[@data-a-target='player-overlay-click-handler']"
-            element_video = driver.find_element(By.XPATH, element_video_xpath)
-        time.sleep(0.5)
+         try:
+             # Ad
+             element_video_ad_xpath = "//div[@data-test-selector='sad-overlay']"
+             element_video = driver.find_element(By.XPATH, element_video_ad_xpath)
+         except:
+             # No ad
+             element_video_xpath = "//div[@data-a-target='player-overlay-click-handler']"
+             element_video = driver.find_element(By.XPATH, element_video_xpath)
+    time.sleep(0.5)
 
     actions = ActionChains(driver)
 
     actions.move_to_element(element_video).perform()
 
-    settings_button = driver.find_element(By.XPATH, "//button[@aria-label='Settings']")
+    settings_button = driver.find_element(By.XPATH, "//button[@aria-label='Impostazioni']")
     settings_button.click()
 
-    quality_option = wait.until(EC.element_to_be_clickable((By.XPATH, "//div[text()='Quality']")))
+    #quality_option = wait.until(EC.element_to_be_clickable((By.XPATH, "//div[contains(@class, 'Layout-sc-1xcs6mc-0 dOdqYi')]")))
+    quality_option = wait.until(EC.element_to_be_clickable((By.XPATH, "//div[text()='Qualità']")))
     quality_option.click()
 
     quality_levels_parent = wait.until(EC.presence_of_element_located((By.XPATH, "//div[@data-a-target='player-settings-menu']")))
     quality_levels = quality_levels_parent.find_elements(By.XPATH, './*')
+
 
     last_btn = quality_levels[len(quality_levels)-1]
     last_btn.click()  # Last btn because sometimes 160p not available
@@ -120,7 +122,7 @@ def print_announcement():
     except:
         print("Could not retrieve announcement from GitHub.\n")
 
-def reopen_pages(driver, proxy_url, twitch_username, proxy_count):
+def reopen_pages(driver, proxy_url, twitch_username, proxy_count, set_160p):
     """Funzione per chiudere e riaprire periodicamente le pagine proxy."""
     while True:
         print(Colors.yellow, Center.XCenter("Chiudendo e riaprendo le pagine proxy..."))
@@ -144,13 +146,25 @@ def reopen_pages(driver, proxy_url, twitch_username, proxy_count):
             text_box.send_keys(f'www.twitch.tv/{twitch_username}')
             text_box.send_keys(Keys.RETURN)
 
+        for i in range(proxy_count):
+            driver.switch_to.window(driver.window_handles[i+1])
+            element_video_xpath = "//div[@data-a-target='player-overlay-click-handler']"
+            WebDriverWait(driver, 10).until( EC.presence_of_element_located((By.XPATH, element_video_xpath)))
+            try:
+                set_stream_quality(driver)
+                print(f"[{i}] Qualità bassa impostata!")
+            except Exception as err:
+                print(f"[{i}] Impossibile impostare la qualità bassa")     
+
+
+
         time.sleep(60)  # Attendi 60 secondi prima di riaprire
 
 def main():
     if not check_for_updates():
         return
 
-    twitch_username = load_settings()
+    twitch_username, set_160p = load_settings()
 
     os.system(f"title xLamday - Twitch Viewer Bot @xLamday ")
 
@@ -193,7 +207,7 @@ def main():
     proxy_choice = int(input("> "))
     proxy_url = proxy_servers.get(proxy_choice)
 
-    if twitch_username is None:
+    if twitch_username is None or set_160p is None:
         twitch_username = input(Colorate.Vertical(Colors.green_to_blue, "Inserisci il nome del canale (e.g xlamday): "))
         set_160p = input(Colorate.Vertical(Colors.purple_to_red, "Do you want to set the stream quality to 160p? (yes/no): "))
         save_settings(twitch_username, set_160p)
@@ -241,29 +255,32 @@ def main():
     driver.get(proxy_url)
     for i in range(proxy_count):
         driver.switch_to.new_window('tab')
+        #driver.execute_script("window.open('" + proxy_url + "')")
+        driver.switch_to.window(driver.window_handles[-1])
         driver.get(proxy_url)
 
 
         text_box = WebDriverWait(driver, 5).until(
             EC.presence_of_element_located((By.ID, 'url'))
         )
-        #text_box = driver.find_element(By.ID, 'url')
         text_box.send_keys(f'www.twitch.tv/{twitch_username}')
         text_box.send_keys(Keys.RETURN)
 
-        wait = WebDriverWait(driver, 5)
-        wait.until(EC.presence_of_element_located((By.XPATH, "//h2[@data-a-target='stream-title']")))
-        
-        if set_160p == "yes":
-            try:
-                set_stream_quality(driver)
-                print(f"[{i}] Sucessfully setting the lowest quality")
-            except Exception as err:
-                # raise err
-                print(f"[{i}] Unable to set the lowest quality")
+        print(f"[{i}] Spettatore aggiunto.")
+
+    for i in range(proxy_count):
+        driver.switch_to.window(driver.window_handles[i+1])
+        element_video_xpath = "//div[@data-a-target='player-overlay-click-handler']"
+        WebDriverWait(driver, 10).until( EC.presence_of_element_located((By.XPATH, element_video_xpath)))
+        try:
+            set_stream_quality(driver)
+            print(f"[{i}] Qualità bassa impostata!")
+        except Exception as err:
+            print(f"[{i}] Impossibile impostare la qualità bassa")     
     
     # Riapri periodicamente le pagine
-    reopen_pages(driver, proxy_url, twitch_username, proxy_count)
+    time.sleep(60)
+    reopen_pages(driver, proxy_url, twitch_username, proxy_count, set_160p)
 
 
 if __name__ == '__main__':
