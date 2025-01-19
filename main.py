@@ -196,13 +196,13 @@ def main():
     if twitch_username is None:
         twitch_username = input(Colorate.Vertical(Colors.green_to_blue, "Inserisci il nome del canale (e.g xlamday): "))
         set_160p = input(Colorate.Vertical(Colors.purple_to_red, "Do you want to set the stream quality to 160p? (yes/no): "))
-        save_settings(twitch_username)
+        save_settings(twitch_username, set_160p)
     else:
         use_settings = input(Colorate.Vertical(Colors.green_to_blue, "Vuoi utilizzare le tue impostazioni salvate? (si/no): "))
         if use_settings.lower() == "no":
             twitch_username = input(Colorate.Vertical(Colors.green_to_blue, "Inserisci il nome del canale (e.g xlamday): "))
             set_160p = input(Colorate.Vertical(Colors.purple_to_red, "Do you want to set the stream quality to 160p? (yes/no): "))
-            save_settings(twitch_username)
+            save_settings(twitch_username, set_160p)
 
     proxy_count = int(input(Colorate.Vertical(Colors.cyan_to_blue, "Quanti spettatori vuoi inviare? ")))
     os.system("cls")
