@@ -238,12 +238,10 @@ def main():
     driver = webdriver.Chrome(options=chrome_options)
 
     # pagine iniziali
-    driver.get(proxy_url)
     for i in range(proxy_count):
         driver.switch_to.new_window('tab')
         driver.get(proxy_url)
 
-        time.sleep(0.3)  # ritardo per il caricamento della pagina
 
         text_box = WebDriverWait(driver, 5).until(
             EC.presence_of_element_located((By.ID, 'url'))
@@ -251,6 +249,9 @@ def main():
         text_box.send_keys(f'www.twitch.tv/{twitch_username}')
         text_box.send_keys(Keys.RETURN)
 
+        wait = WebDriverWait(driver, 240)
+        wait.until(EC.presence_of_element_located((By.XPATH, "//h2[@data-a-target='stream-title']")))
+        
         if set_160p == "yes":
             try:
                 time.sleep(0.5)
