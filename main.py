@@ -238,15 +238,16 @@ def main():
     driver = webdriver.Chrome(options=chrome_options)
 
     # pagine iniziali
+    driver.get(proxy_url)
     for i in range(proxy_count):
         driver.switch_to.new_window('tab')
         driver.get(proxy_url)
 
 
-        #text_box = WebDriverWait(driver, 5).until(
-        #    EC.presence_of_element_located((By.ID, 'url'))
-        #)
-        text_box = driver.find_element(By.ID, 'url')
+        text_box = WebDriverWait(driver, 5).until(
+            EC.presence_of_element_located((By.ID, 'url'))
+        )
+        #text_box = driver.find_element(By.ID, 'url')
         text_box.send_keys(f'www.twitch.tv/{twitch_username}')
         text_box.send_keys(Keys.RETURN)
 
