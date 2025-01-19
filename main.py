@@ -64,7 +64,7 @@ def check_for_updates():
         print(f"Errore durante il controllo degli aggiornamenti: {e}")
         return True
 
-def save_settings(twitch_username):
+def save_settings(twitch_username, set_160p):
     with open('settings.txt', 'w') as file:
         file.write(f"Twitch Username: {twitch_username}\n")
         file.write(f"Set 160p: {set_160p}\n")    
