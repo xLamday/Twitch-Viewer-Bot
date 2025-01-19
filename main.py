@@ -58,7 +58,6 @@ def check_for_updates():
                 print("Aggiornamento annullato.")
                 return False
         else:
-            print("Il programma è già aggiornato.")
             return True
     except Exception as e:
         print(f"Errore durante il controllo degli aggiornamenti: {e}")
