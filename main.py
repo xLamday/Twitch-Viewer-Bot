@@ -135,7 +135,7 @@ def reopen_pages(driver, proxy_url, twitch_username, proxy_count, set_160p):
         # Riapre le finestre richieste
         driver.switch_to.window(driver.window_handles[0])
         for i in range(proxy_count):
-            driver.execute_script("window.open('')")  # Open a new empty window
+            driver.switch_to.new_window('tab')  # Open a new empty window
             new_window_handle = driver.window_handles[-1]  # Get the handle of the newly opened window
             driver.switch_to.window(new_window_handle)
             driver.get(proxy_url)
