@@ -135,7 +135,8 @@ def reopen_pages(driver, proxy_url, twitch_username, proxy_count, set_160p):
         # Riapre le finestre richieste
         driver.switch_to.window(driver.window_handles[0])
         for i in range(proxy_count):
-            driver.switch_to.new_window('tab')  # Open a new empty window
+            #driver.execute_script("window.open('')")  # Open a new empty window
+            driver.switch_to.new_window('tab')
             new_window_handle = driver.window_handles[-1]  # Get the handle of the newly opened window
             driver.switch_to.window(new_window_handle)
             driver.get(proxy_url)
@@ -146,17 +147,18 @@ def reopen_pages(driver, proxy_url, twitch_username, proxy_count, set_160p):
             text_box.send_keys(f'www.twitch.tv/{twitch_username}')
             text_box.send_keys(Keys.RETURN)
 
-        for i in range(proxy_count):
-            driver.switch_to.window(driver.window_handles[i+1])
-            element_video_xpath = "//div[@data-a-target='player-overlay-click-handler']"
-            WebDriverWait(driver, 10).until( EC.presence_of_element_located((By.XPATH, element_video_xpath)))
-            try:
-                set_stream_quality(driver)
-                print(f"[{i}] Qualità bassa impostata!")
-            except Exception as err:
-                print(f"[{i}] Impossibile impostare la qualità bassa")     
-
-
+        if set_160p in ["no"]:
+            print("Qualità non impostata perché l'utente ha scelto 'no'.")
+        elif set_160p in ["yes", "si"]:
+            for i in range(proxy_count):
+                driver.switch_to.window(driver.window_handles[i + 1])
+                element_video_xpath = "//div[@data-a-target='player-overlay-click-handler']"
+                WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, element_video_xpath)))
+                try:
+                    set_stream_quality(driver)
+                    print(f"[{i}] Qualità bassa impostata!")
+                except Exception as err:
+                    print(f"[{i}] Impossibile impostare la qualità bassa")
 
         time.sleep(60)  # Attendi 60 secondi prima di riaprire
 
@@ -268,15 +270,19 @@ def main():
 
         print(f"[{i}] Spettatore aggiunto.")
 
-    for i in range(proxy_count):
-        driver.switch_to.window(driver.window_handles[i+1])
-        element_video_xpath = "//div[@data-a-target='player-overlay-click-handler']"
-        WebDriverWait(driver, 10).until( EC.presence_of_element_located((By.XPATH, element_video_xpath)))
-        try:
-            set_stream_quality(driver)
-            print(f"[{i}] Qualità bassa impostata!")
-        except Exception as err:
-            print(f"[{i}] Impossibile impostare la qualità bassa")     
+    if set_160p in ["yes", "si"]:
+        for i in range(proxy_count):
+            driver.switch_to.window(driver.window_handles[i+1])
+            element_video_xpath = "//div[@data-a-target='player-overlay-click-handler']"
+            WebDriverWait(driver, 10).until( EC.presence_of_element_located((By.XPATH, element_video_xpath)))
+            try:
+                set_stream_quality(driver)
+                print(f"[{i}] Qualità bassa impostata!")
+            except Exception as err:
+                print(f"[{i}] Impossibile impostare la qualità bassa")
+    else:
+        for i in range(proxy_count):
+            driver.switch_to.window(driver.window_handles[i+1])
     
     # Riapri periodicamente le pagine
     time.sleep(60)
