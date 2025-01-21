@@ -13,6 +13,7 @@ import time
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
+# 2.4
 def check_for_updates():
     try:
         # Link al file della versione remota
@@ -58,7 +59,7 @@ def check_for_updates():
                 print("Aggiornamento annullato.")
                 return False
         else:
-            print("Il programma è già aggiornato.")
+            #print("Il programma è già aggiornato.")
             return True
     except Exception as e:
         print(f"Errore durante il controllo degli aggiornamenti: {e}")
@@ -113,14 +114,6 @@ def set_stream_quality(driver):
 
     last_btn = quality_levels[len(quality_levels)-1]
     last_btn.click()  # Last btn because sometimes 160p not available
-
-def print_announcement():
-    try:
-        r = requests.get("https://raw.githubusercontent.com/Kichi779/Twitch-Viewer-Bot/main/announcement.txt", headers={"Cache-Control": "no-cache"})
-        announcement = r.content.decode('utf-8').strip()
-        return announcement
-    except:
-        print("Could not retrieve announcement from GitHub.\n")
 
 def reopen_pages(driver, proxy_url, twitch_username, proxy_count, set_160p):
     """Funzione per chiudere e riaprire periodicamente le pagine proxy."""
@@ -184,13 +177,6 @@ def main():
                              Discord discord.gg/yzreKA4xZD   
                              Github  github.com/xLamday    """)))
 
-    # announcement = print_announcement()
-    # print("")
-    # print(Colors.red, Center.XCenter("ANNOUNCEMENT"))
-    # print(Colors.yellow, Center.XCenter(f"{announcement}"))
-    # print("")
-    # print("")
-
     proxy_servers = {
         1: "https://www.blockaway.net",
         2: "https://www.croxyproxy.com",
@@ -201,7 +187,7 @@ def main():
         7: "https://www.croxyproxy.net",
     }
 
-    # Selecting proxy server
+    # Seleziona proxy server
     print(Colors.green, "Proxy Server 1 è raccomandato")
     print(Colorate.Vertical(Colors.green_to_blue, "Seleziona un proxy server (1,2,3..):"))
     for i in range(1, 7):
@@ -221,7 +207,20 @@ def main():
             save_settings(twitch_username, set_160p)
 
     proxy_count = int(input(Colorate.Vertical(Colors.cyan_to_blue, "Quanti spettatori vuoi inviare? ")))
-    os.system("cls")
+
+    if not twitch_username and not set_160p:
+        if not twitch_username and not set_160p:
+            print("Non hai inserito nessun valore!")
+        elif not twitch_username:
+            print("Inserisci un nickname di uno streamer!")
+        else:  # set_160p non impostato
+            print("Impossibile avviare lo script senza specificare la qualità bassa o meno")
+        time.sleep(2)
+        os.system("cls") 
+        main()
+        return # Assicurati di uscire dalla funzione dopo main()
+
+
     print(Colorate.Vertical(Colors.green_to_cyan, Center.XCenter("""
 
                         __                          __             
@@ -257,7 +256,6 @@ def main():
     driver.get(proxy_url)
     for i in range(proxy_count):
         driver.switch_to.new_window('tab')
-        #driver.execute_script("window.open('" + proxy_url + "')")
         driver.switch_to.window(driver.window_handles[-1])
         driver.get(proxy_url)
 
