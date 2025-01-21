@@ -220,7 +220,7 @@ def main():
         main()
         return # Assicurati di uscire dalla funzione dopo main()
 
-    os.system("cls)
+    os.system("cls")
     print(Colorate.Vertical(Colors.green_to_cyan, Center.XCenter("""
 
                         __                          __             
