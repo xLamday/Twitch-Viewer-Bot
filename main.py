@@ -13,7 +13,7 @@ import time
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-# 2.4
+# 2.6.1
 def check_for_updates():
     try:
         # Link al file della versione remota
@@ -90,11 +90,11 @@ def set_stream_quality(driver):
          try:
              # Ad
              element_video_ad_xpath = "//div[@data-test-selector='sad-overlay']"
-             element_video = wait.until(EC.presence_of_element_located(By.XPATH, element_video_ad_xpath))
+             element_video = driver.find_element(By.XPATH, element_video_ad_xpath)
          except:
              # No ad
              element_video_xpath = "//div[@data-a-target='player-overlay-click-handler']"
-             element_video = wait.until(EC.presence_of_element_located(By.XPATH, element_video_xpath))
+             element_video = driver.find_element(By.XPATH, element_video_xpath)
     time.sleep(0.5)
 
     actions = ActionChains(driver)
