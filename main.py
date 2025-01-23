@@ -101,7 +101,7 @@ def set_stream_quality(driver):
 
     actions.move_to_element(element_video).perform()
 
-    settings_button = wait.until(EC.element_to_be_clickable(By.XPATH, "//button[@aria-label='Impostazioni']"))
+    settings_button = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[@aria-label='Impostazioni']")))
     settings_button.click()
 
     #quality_option = wait.until(EC.element_to_be_clickable((By.XPATH, "//div[contains(@class, 'Layout-sc-1xcs6mc-0 dOdqYi')]")))
