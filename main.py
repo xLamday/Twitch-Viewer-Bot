@@ -90,18 +90,18 @@ def set_stream_quality(driver):
          try:
              # Ad
              element_video_ad_xpath = "//div[@data-test-selector='sad-overlay']"
-             element_video = driver.find_element(By.XPATH, element_video_ad_xpath)
+             element_video = wait.until(EC.presence_of_element_located(By.XPATH, element_video_ad_xpath))
          except:
              # No ad
              element_video_xpath = "//div[@data-a-target='player-overlay-click-handler']"
-             element_video = driver.find_element(By.XPATH, element_video_xpath)
+             element_video = wait.until(EC.presence_of_element_located(By.XPATH, element_video_xpath))
     time.sleep(0.5)
 
     actions = ActionChains(driver)
 
     actions.move_to_element(element_video).perform()
 
-    settings_button = driver.find_element(By.XPATH, "//button[@aria-label='Impostazioni']")
+    settings_button = wait.until(EC.element_to_be_clickable(By.XPATH, "//button[@aria-label='Impostazioni']"))
     settings_button.click()
 
     #quality_option = wait.until(EC.element_to_be_clickable((By.XPATH, "//div[contains(@class, 'Layout-sc-1xcs6mc-0 dOdqYi')]")))
@@ -136,7 +136,9 @@ def reopen_pages(driver, proxy_url, twitch_username, proxy_count, set_160p):
 
             time.sleep(2)  # Aggiungi un ritardo per il caricamento della pagina
 
-            text_box = driver.find_element(By.ID, 'url')
+            text_box = WebDriverWait(driver, 5).until(
+            EC.presence_of_element_located((By.ID, 'url'))
+            )
             text_box.send_keys(f'www.twitch.tv/{twitch_username}')
             text_box.send_keys(Keys.RETURN)
 
