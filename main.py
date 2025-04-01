@@ -13,7 +13,7 @@ import time
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-# 2.6.1
+# 2.8
 def check_for_updates():
     try:
         # Link al file della versione remota
@@ -115,48 +115,6 @@ def set_stream_quality(driver):
     last_btn = quality_levels[len(quality_levels)-1]
     last_btn.click()  # Last btn because sometimes 160p not available
 
-def reopen_pages(driver, proxy_url, twitch_username, proxy_count, set_160p):
-    """Funzione per chiudere e riaprire periodicamente le pagine proxy."""
-    while True:
-        print(Colors.yellow, Center.XCenter("Chiudendo e riaprendo le pagine proxy..."))
-
-        # Chiude tutte le finestre tranne la prima
-        while len(driver.window_handles) > 1:
-            driver.switch_to.window(driver.window_handles[-1])
-            driver.close()
-
-        # Riapre le finestre richieste
-        driver.switch_to.window(driver.window_handles[0])
-        for i in range(proxy_count):
-            #driver.execute_script("window.open('')")  # Open a new empty window
-            driver.switch_to.new_window('tab')
-            new_window_handle = driver.window_handles[-1]  # Get the handle of the newly opened window
-            driver.switch_to.window(new_window_handle)
-            driver.get(proxy_url)
-
-            time.sleep(2)  # Aggiungi un ritardo per il caricamento della pagina
-
-            text_box = WebDriverWait(driver, 5).until(
-            EC.presence_of_element_located((By.ID, 'url'))
-            )
-            text_box.send_keys(f'www.twitch.tv/{twitch_username}')
-            text_box.send_keys(Keys.RETURN)
-
-        if set_160p in ["no"]:
-            print("Qualità non impostata perché l'utente ha scelto 'no'.")
-        elif set_160p in ["yes", "si"]:
-            for i in range(proxy_count):
-                driver.switch_to.window(driver.window_handles[i + 1])
-                element_video_xpath = "//div[@data-a-target='player-overlay-click-handler']"
-                WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, element_video_xpath)))
-                try:
-                    set_stream_quality(driver)
-                    print(f"[{i}] Qualità bassa impostata!")
-                except Exception as err:
-                    print(f"[{i}] Impossibile impostare la qualità bassa")
-
-        time.sleep(60)  # Attendi 60 secondi prima di riaprire
-
 def main():
     if not check_for_updates():
         return
@@ -246,47 +204,73 @@ def main():
     chrome_options.add_experimental_option('excludeSwitches', ['enable-logging'])
     chrome_options.add_argument('--disable-logging')
     chrome_options.add_argument('--log-level=3')
-    chrome_options.add_argument('--headless')
+    chrome_options.add_argument('--headless=new')
     chrome_options.add_argument("--mute-audio")
     chrome_options.add_argument('--disable-dev-shm-usage')
+    chrome_options.add_argument("--disable-gpu")
+    chrome_options.add_argument("--disable-infobars")
+    chrome_options.add_argument("--disable-blink-features=AutomationControlled")
+    chrome_options.add_argument("--blink-settings=imagesEnabled=false")
+    chrome_options.add_argument("--disable-background-timer-throttling")
+    chrome_options.add_argument("--disable-backgrounding-occluded-windows")
+    chrome_options.add_argument("--disable-renderer-backgrounding")
+
+    ## INIT DRIVER AS NONE
+    driver = None
+    
     # ADBLOCK EXT
     extension_path = 'adblock.crx'
     chrome_options.add_extension(extension_path)
-    driver = webdriver.Chrome(options=chrome_options)
-
-    # pagine iniziali
-    driver.get(proxy_url)
-    for i in range(proxy_count):
-        driver.switch_to.new_window('tab')
-        driver.switch_to.window(driver.window_handles[-1])
-        driver.get(proxy_url)
-
-
-        text_box = WebDriverWait(driver, 5).until(
-            EC.presence_of_element_located((By.ID, 'url'))
-        )
-        text_box.send_keys(f'www.twitch.tv/{twitch_username}')
-        text_box.send_keys(Keys.RETURN)
-
-        print(f"[{i}] Spettatore aggiunto.")
-
-    if set_160p in ["yes", "si"]:
-        for i in range(proxy_count):
-            driver.switch_to.window(driver.window_handles[i+1])
-            element_video_xpath = "//div[@data-a-target='player-overlay-click-handler']"
-            WebDriverWait(driver, 10).until( EC.presence_of_element_located((By.XPATH, element_video_xpath)))
-            try:
-                set_stream_quality(driver)
-                print(f"[{i}] Qualità bassa impostata!")
-            except Exception as err:
-                print(f"[{i}] Impossibile impostare la qualità bassa")
-    else:
-        for i in range(proxy_count):
-            driver.switch_to.window(driver.window_handles[i+1])
     
-    # Riapri periodicamente le pagine
-    time.sleep(60)
-    reopen_pages(driver, proxy_url, twitch_username, proxy_count, set_160p)
+    ## CHECK FOR DRIVER_PATH
+    if driver_path:
+        driver = webdriver.Chrome(options=chrome_options)
+        
+    print(Colors.red, "Inizializzo gli spettatori... Aspetta qualche minuto... non chiudere questa finestra!")
+    
+    try:
+        driver.get(proxy_url)
+        for i in range(proxy_count):
+            driver.switch_to.new_window('tab')
+            driver.switch_to.window(driver.window_handles[-1])
+            driver.get(proxy_url)
+        
+
+            try:
+                # Trova la casella di testo e inserisce l'URL di Twitch
+                text_box = WebDriverWait(driver, 5).until(
+                    EC.presence_of_element_located((By.ID, 'url'))
+                )
+                text_box.send_keys(f'www.twitch.tv/{twitch_username}')
+                text_box.send_keys(Keys.RETURN)
+                print(f"[{i}] Spettatore aggiunto.")
+            except Exception as e:
+                print(f"[{i + 1}] Errore durante l'aggiunta dello spettatore: {e}")
+
+        if set_160p in ["yes", "si"]:
+            for i in range(proxy_count):
+                driver.switch_to.window(driver.window_handles[i+1])
+                element_video_xpath = "//div[@data-a-target='player-overlay-click-handler']"
+                WebDriverWait(driver, 30).until( EC.presence_of_element_located((By.XPATH, element_video_xpath)))
+                try:
+                    set_stream_quality(driver)
+                    print(f"[{i}] Qualità bassa impostata!")
+                except Exception as err:
+                    print(f"[{i}] Impossibile impostare la qualità bassa")
+        else:
+            for i in range(proxy_count):
+                driver.switch_to.window(driver.window_handles[i+1])
+
+        while True:
+            time.sleep(60)
+            print("Riavvio in corso delle pagine!")
+            for pagine in driver.window_handles:
+                driver.switch_to.window(pagine)
+                driver.refresh()
+    finally:
+        if driver:
+            driver.quit()
+            
 
 
 if __name__ == '__main__':
