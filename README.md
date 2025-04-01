@@ -62,7 +62,8 @@ pip install -r requirements.txt (Or you can click on install.bat file)
 - Spotify Plays & Followers: Increase your Spotify plays and followers to get your music heard by a wider audience and climb the charts.
 -  ### AND MORE
 
-
+# Common issues
+If you encounter any issues regarding the chromedriver.exe, just delete the file and try again. If it still doesdnt work, open an Issue and provide more info about the issue and we'll look into it.
 
 # Stars ⭐
 - Send more viewers and monetize ads / 50 Star ⭐ ✔️ 17.05.2023
