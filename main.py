@@ -13,7 +13,17 @@ import time
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-# 2.8
+# 3.0
+
+## AGGIORNAMENTO PRINCIPALE – Refactor logico e miglioramenti UX/QoL
+
+## CHANGELOG:
+# - Introdotta una gestione avanzata degli errori per richieste HTTP e input dell’utente 
+# - Ottimizzata la logica di selezione tra player disponibili e qualità dello stream  
+# - Implementata un’opzione per procedere senza fare l'aggiornamento dell'applicazione (NB: Utilizzerai la versione attuale, consigliamo di fare gli aggiornamenti
+#   per mantenere il programma aggiornato da eventuali bug riscontrati e/o migliorie generali.)
+
+
 def check_for_updates():
     try:
         # Link al file della versione remota
@@ -52,17 +62,19 @@ def check_for_updates():
                     print("Aggiornamento completato con successo!")
                     time.sleep(5)
                     os.system("cls")
-                except Exception as e:
-                    print(f"Errore durante il download dei file: {e}")
+                except requests.RequestException as errore:
+                    print(f"Errore durante il download dei file: {errore}")
                 return False
             else:
-                print("Aggiornamento annullato.")
+                print('')
+                print(f"Aggiornamento annullato. Procedo con la versione attuale!\n\nVersione attuale: {local_version}")
+                main()
                 return False
         else:
             #print("Il programma è già aggiornato.")
             return True
-    except Exception as e:
-        print(f"Errore durante il controllo degli aggiornamenti: {e}")
+    except requests.RequestException as errore:
+        print(f"Errore durante il controllo degli aggiornamenti: {errore}")
         return True
 
 def save_settings(twitch_username, set_160p):
@@ -85,40 +97,54 @@ def load_settings():
 def set_stream_quality(driver):
     wait = WebDriverWait(driver, 15)
 
-    element_video = None
-    while not element_video:
-         try:
-             # Ad
-             element_video_ad_xpath = "//div[@data-test-selector='sad-overlay']"
-             element_video = driver.find_element(By.XPATH, element_video_ad_xpath)
-         except:
-             # No ad
-             element_video_xpath = "//div[@data-a-target='player-overlay-click-handler']"
-             element_video = driver.find_element(By.XPATH, element_video_xpath)
-    time.sleep(0.5)
-
-    actions = ActionChains(driver)
-
-    actions.move_to_element(element_video).perform()
-
-    settings_button = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[@aria-label='Impostazioni']")))
-    settings_button.click()
-
-    #quality_option = wait.until(EC.element_to_be_clickable((By.XPATH, "//div[contains(@class, 'Layout-sc-1xcs6mc-0 dOdqYi')]")))
-    quality_option = wait.until(EC.element_to_be_clickable((By.XPATH, "//div[text()='Qualità']")))
-    quality_option.click()
-
-    quality_levels_parent = wait.until(EC.presence_of_element_located((By.XPATH, "//div[@data-a-target='player-settings-menu']")))
-    quality_levels = quality_levels_parent.find_elements(By.XPATH, './*')
-
-
-    last_btn = quality_levels[len(quality_levels)-1]
-    last_btn.click()  # Last btn because sometimes 160p not available
-
-def main():
-    if not check_for_updates():
+    try:
+        element_video_xpath = "//div[@data-test-selector='sad-overlay' or @data-a-target='player-overlay-click-handler']"
+        element_video = wait.until(EC.presence_of_element_located((By.XPATH, element_video_xpath)))
+    except Exception as errore:
+        print("Impossibile trovare il video. Assicurati che il video sia caricato.")
+        print(f"{errore}")
         return
 
+    # Porta il cursore sul video per mostrare i controlli
+    actions = ActionChains(driver)
+    actions.move_to_element(element_video).perform()
+
+    # Clicca il pulsante Impostazioni
+    try:
+        settings_button = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[@aria-label='Impostazioni']")))
+        settings_button.click()
+    except Exception as errore:
+        print("Non è stato possibile trovare il pulsante Impostazioni.")
+        print(f"{errore}")
+        return
+
+    # Clicca sull'opzione 'Qualità'
+    try:
+        quality_option = wait.until(EC.element_to_be_clickable((By.XPATH, "//div[text()='Qualità']")))
+        quality_option.click()
+    except Exception as errore:
+        print("Non è stato possibile trovare l'opzione Qualità.")
+        print(f"{errore}")
+        return
+
+    # Seleziona il livello di qualità più basso
+    try:
+        quality_levels_parent = wait.until(EC.presence_of_element_located((By.XPATH, "//div[@data-a-target='player-settings-menu']")))
+        quality_levels = quality_levels_parent.find_elements(By.XPATH, './*')
+
+        # Seleziona l'ultima opzione (bassa qualità)
+        if quality_levels:
+            last_quality_option = quality_levels[-1]
+            last_quality_option.click()
+        else:
+            print("Non sono stati trovati livelli di qualità.")
+    except Exception as errore:
+        print("Errore durante il caricamento delle opzioni di qualità.")
+        print(f"{errore}")
+        return
+
+def main():
+    
     twitch_username, set_160p = load_settings()
 
     os.system(f"title xLamday - Twitch Viewer Bot @xLamday ")
@@ -152,8 +178,12 @@ def main():
     print(Colorate.Vertical(Colors.green_to_blue, "Seleziona un proxy server (1,2,3..):"))
     for i in range(1, 7):
         print(Colorate.Vertical(Colors.red_to_blue, f"Proxy Server {i}"))
-    proxy_choice = int(input("> "))
-    proxy_url = proxy_servers.get(proxy_choice)
+    try:
+        proxy_choice = int(input("> "))
+        proxy_url = proxy_servers.get(proxy_choice, proxy_servers[1])
+    except ValueError:
+        print("Scelta non valida. Imposto la proxy di default (1).")
+        proxy_url = proxy_servers[1]
 
     if twitch_username is None or set_160p is None:
         twitch_username = input(Colorate.Vertical(Colors.green_to_blue, "Inserisci il nome del canale (e.g xlamday): "))
@@ -166,7 +196,12 @@ def main():
             set_160p = input(Colorate.Vertical(Colors.purple_to_red, "Vuoi impostare la qualità a 160p? (si/no): "))
             save_settings(twitch_username, set_160p)
 
-    proxy_count = int(input(Colorate.Vertical(Colors.cyan_to_blue, "Quanti spettatori vuoi inviare? ")))
+    try:
+        proxy_count = int(input(Colorate.Vertical(Colors.cyan_to_blue, "Quanti spettatori vuoi inviare? ")))
+    except ValueError:
+        print("Input o numero non valido.")
+        time.sleep(2)
+        proxy_count = int(input(Colorate.Vertical(Colors.cyan_to_blue, "Quanti spettatori vuoi inviare? ")))
 
     if not twitch_username and not set_160p:
         if not twitch_username and not set_160p:
@@ -195,7 +230,6 @@ def main():
                              Github  github.com/xLamday    """)))
     print('')
     print('')
-    print(Colors.red, Center.XCenter("Spettatori in invio. Non avere fretta. Se gli spettatori non dovessero funzionare correttamente, prova a riavviare il programma e rifare le operazioni."))
 
     chrome_path = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
     driver_path = 'chromedriver.exe'
@@ -225,8 +259,12 @@ def main():
     ## CHECK FOR DRIVER_PATH
     if driver_path:
         driver = webdriver.Chrome(options=chrome_options)
-        
-    print(Colors.red, "Inizializzo gli spettatori... Aspetta qualche minuto... non chiudere questa finestra!")
+    
+    print('')
+    print(Colors.red, Center.XCenter("Inizializzo gli spettatori... Aspetta qualche minuto... non chiudere questa finestra!"))
+    print('')
+    print(Colors.red, Center.XCenter("Se gli spettatori non dovessero funzionare correttamente, prova a riavviare il programma e rifare le operazioni."))
+    print('')
     
     try:
         driver.get(proxy_url)
@@ -274,4 +312,5 @@ def main():
 
 
 if __name__ == '__main__':
+    check_for_updates()
     main()
